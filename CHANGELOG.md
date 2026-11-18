@@ -5,6 +5,12 @@ fixes and looks (colours, design, logo). Experimental builds carry the letter e 
 stable releases carry none. Stable releases come from `main`. Work in progress lands on `experimental`
 first as `vX.Y.Ze+<build>` until Aurora calls a full release.
 
+## v0.2.0 — 2026-11-18
+
+- **Add many sounds at once.** In Edit sounds > Add from files, long-press a file, tap the rest,
+  then Select. Each one is named after its file (rename any of them later). Files that aren't
+  playable sounds are skipped and Shout says how many. Picking a single file still asks for a name.
+
 ## v0.1.1 — 2026-11-18
 
 - **MP3 and WAV files can be added.** The file picker no longer hides files: many phones label

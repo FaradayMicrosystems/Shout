@@ -41,7 +41,9 @@ import androidx.core.content.ContextCompat
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -62,6 +64,7 @@ class MainActivity : ComponentActivity() {
     var megaOn by mutableStateOf(false)   // Megaphone toggle latched on
     var talking by mutableStateOf(false)  // Hold-to-talk pressed
     var picker: androidx.activity.result.ActivityResultLauncher<Array<String>>? = null
+    var importing by mutableStateOf(false) // a batch of files is being copied in
     var tileSize by mutableFloatStateOf(150f) // soundboard tile width in dp (the "scale")
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -170,11 +173,12 @@ fun SoundboardGrid(act: MainActivity) {
             ) {
                 if (act.editMode) {
                     item(key = "add") {
-                        EditTile("Add from files", Icons.Default.LibraryAdd, Tile, tileH) {
+                        EditTile(if (act.importing) "Adding…" else "Add from files", Icons.Default.LibraryAdd, Tile, tileH) {
+                            if (act.importing) return@EditTile
                             // "*/*" so no file is greyed out: many phones label MP3/WAV downloads as
                             // "application/octet-stream", which an "audio/*" filter hides. The app checks
                             // the file itself after you pick it.
-                            act.picker?.launch(arrayOf("*/*"))
+                            act.picker?.launch(arrayOf("*/*")) // pick one or many (long-press to select several)
                         }
                     }
                     item(key = "rec") { RecordTile(act, tileH) }
@@ -218,7 +222,7 @@ fun SoundboardGrid(act: MainActivity) {
     }
 
     act.pendingUri?.let { uri ->
-        NameDialog(title = "Name this sound", initial = fileName(ctx, uri),
+        NameDialog(title = "Name this sound", initial = act.store.displayName(uri),
             onDismiss = { act.pendingUri = null },
             onConfirm = { name ->
                 act.pendingUri = null
@@ -237,16 +241,6 @@ fun SoundboardGrid(act: MainActivity) {
             onConfirm = { act.store.rename(s, it); editing = null },
             onDelete = { act.player.stop(s.id); act.store.delete(s); editing = null })
     }
-}
-
-private fun fileName(ctx: Context, uri: Uri): String {
-    var name = "Sound"
-    runCatching {
-        ctx.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c: Cursor ->
-            if (c.moveToFirst()) name = c.getString(0) ?: name
-        }
-    }
-    return name.substringBeforeLast('.')
 }
 
 @Composable
@@ -325,11 +319,27 @@ fun BottomControls(act: MainActivity) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val (hasMic, askMic) = rememberMic()
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
+    // One file: name it now. Several: each is named after its file, rename later in Edit sounds.
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        if (uris.size == 1) {
+            val uri = uris[0]
             if (act.store.isPlayableAudio(uri)) act.pendingUri = uri
             else Toast.makeText(ctx, "That isn't a sound file Android can play. MP3, WAV, M4A, OGG and FLAC all work.",
                 Toast.LENGTH_LONG).show()
+        } else if (uris.size > 1) {
+            act.importing = true
+            scope.launch {
+                var added = 0
+                for (uri in uris) {
+                    val name = act.store.displayName(uri)
+                    val copy = withContext(Dispatchers.IO) { act.store.copyIn(uri) }
+                    if (copy != null) { act.store.add(name, copy); added++ }
+                }
+                act.importing = false
+                val skipped = uris.size - added
+                Toast.makeText(ctx, "Added $added sounds" + (if (skipped > 0) ", skipped $skipped that aren't playable sound files" else ""),
+                    Toast.LENGTH_LONG).show()
+            }
         }
     }
     SideEffect { act.picker = picker }

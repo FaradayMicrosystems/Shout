@@ -40,15 +40,34 @@ class SoundStore(private val context: Context) {
      * is moved or deleted. Returns false if Android can't play the file.
      */
     fun importSound(name: String, uri: Uri): Boolean {
-        if (!isPlayableAudio(uri)) return false
-        val ext = extension(uri)
+        val copy = copyIn(uri) ?: return false
+        add(name, copy)
+        return true
+    }
+
+    /**
+     * Checks and copies one file into app storage without touching the list, so it can run off the
+     * main thread for big batches. Returns the copy, or null if it isn't playable or can't be read.
+     */
+    fun copyIn(uri: Uri): Uri? {
+        if (!isPlayableAudio(uri)) return null
         val dir = File(context.filesDir, "sounds").apply { mkdirs() }
-        val out = File(dir, "${UUID.randomUUID()}.$ext")
+        val out = File(dir, "${UUID.randomUUID()}.${extension(uri)}")
         return try {
             context.contentResolver.openInputStream(uri)!!.use { input -> out.outputStream().use { input.copyTo(it) } }
-            add(name, Uri.fromFile(out))
-            true
-        } catch (e: Exception) { out.delete(); false }
+            Uri.fromFile(out)
+        } catch (e: Exception) { out.delete(); null }
+    }
+
+    /** The file's name without its extension, used as the button name ("airhorn.mp3" -> "airhorn"). */
+    fun displayName(uri: Uri): String {
+        var name = "Sound"
+        runCatching {
+            context.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use {
+                if (it.moveToFirst()) name = it.getString(0) ?: name
+            }
+        }
+        return name.substringBeforeLast('.').replace('_', ' ').trim().ifBlank { "Sound" }
     }
 
     private fun extension(uri: Uri): String {

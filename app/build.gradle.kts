@@ -18,7 +18,7 @@ fun prop(name: String, default: String = "") = localProps.getProperty(name, defa
 // The version this branch builds, Aurora's X.Y.Z rule: X primary releases, Y user-visible changes
 // and features, Z minor fixes and looks. main: stable, no letter ("0.1.0"). experimental: the next
 // version plus e (experimental), e.g. "0.1.1e". CI reads this line, so keep it as one plain string.
-val baseVersionName = "0.1.1"
+val baseVersionName = "0.2.0"
 
 // GitHub Actions' run number: always rising, across both branches.
 val ciBuild: Int? = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()
