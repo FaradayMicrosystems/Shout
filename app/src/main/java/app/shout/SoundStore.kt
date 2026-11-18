@@ -34,6 +34,51 @@ class SoundStore(private val context: Context) {
         save()
     }
 
+    /**
+     * Copies a picked file into the app and adds it. Copying (instead of pointing at the original)
+     * works with every file source (Downloads, Drive, Files apps) and keeps working if the original
+     * is moved or deleted. Returns false if Android can't play the file.
+     */
+    fun importSound(name: String, uri: Uri): Boolean {
+        if (!isPlayableAudio(uri)) return false
+        val ext = extension(uri)
+        val dir = File(context.filesDir, "sounds").apply { mkdirs() }
+        val out = File(dir, "${UUID.randomUUID()}.$ext")
+        return try {
+            context.contentResolver.openInputStream(uri)!!.use { input -> out.outputStream().use { input.copyTo(it) } }
+            add(name, Uri.fromFile(out))
+            true
+        } catch (e: Exception) { out.delete(); false }
+    }
+
+    private fun extension(uri: Uri): String {
+        var ext = ""
+        runCatching {
+            context.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use {
+                if (it.moveToFirst()) ext = it.getString(0)?.substringAfterLast('.', "") ?: ""
+            }
+        }
+        if (ext.isBlank()) ext = android.webkit.MimeTypeMap.getSingleton()
+            .getExtensionFromMimeType(context.contentResolver.getType(uri)) ?: "audio"
+        return ext.lowercase().filter { it.isLetterOrDigit() }.take(5).ifBlank { "audio" }
+    }
+
+    /** True if Android's media player can open it (MP3, WAV, M4A/AAC, OGG, FLAC, OPUS, AMR, MIDI...). */
+    fun isPlayableAudio(uri: Uri): Boolean {
+        runCatching {
+            val r = android.media.MediaMetadataRetriever()
+            try {
+                r.setDataSource(context, uri)
+                if (r.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_HAS_AUDIO) == "yes") return true
+            } finally { r.release() }
+        }
+        // Some files (raw WAV, odd MP3 headers) confuse the metadata reader; try the real player.
+        return runCatching {
+            val mp = android.media.MediaPlayer()
+            try { mp.setDataSource(context, uri); mp.prepare(); true } finally { mp.release() }
+        }.getOrDefault(false)
+    }
+
     fun rename(sound: Sound, name: String) {
         val i = sounds.indexOfFirst { it.id == sound.id }
         if (i >= 0) { sounds[i] = sound.copy(name = name); save() }
@@ -43,7 +88,7 @@ class SoundStore(private val context: Context) {
         sounds.removeAll { it.id == sound.id }
         save()
         val uri = Uri.parse(sound.uri)
-        if (uri.scheme == "file") uri.path?.let { File(it).delete() } // our own recordings
+        if (uri.scheme == "file") uri.path?.let { File(it).delete() } // our own copies and recordings
         else runCatching {
             context.contentResolver.releasePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }

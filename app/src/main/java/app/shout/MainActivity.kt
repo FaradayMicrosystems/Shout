@@ -171,7 +171,10 @@ fun SoundboardGrid(act: MainActivity) {
                 if (act.editMode) {
                     item(key = "add") {
                         EditTile("Add from files", Icons.Default.LibraryAdd, Tile, tileH) {
-                            act.picker?.launch(arrayOf("audio/*"))
+                            // "*/*" so no file is greyed out: many phones label MP3/WAV downloads as
+                            // "application/octet-stream", which an "audio/*" filter hides. The app checks
+                            // the file itself after you pick it.
+                            act.picker?.launch(arrayOf("*/*"))
                         }
                     }
                     item(key = "rec") { RecordTile(act, tileH) }
@@ -217,7 +220,11 @@ fun SoundboardGrid(act: MainActivity) {
     act.pendingUri?.let { uri ->
         NameDialog(title = "Name this sound", initial = fileName(ctx, uri),
             onDismiss = { act.pendingUri = null },
-            onConfirm = { act.store.add(it, uri); act.pendingUri = null })
+            onConfirm = { name ->
+                act.pendingUri = null
+                if (!act.store.importSound(name, uri))
+                    Toast.makeText(ctx, "Couldn't copy that file. Try another one.", Toast.LENGTH_LONG).show()
+            })
     }
     act.finishedRec?.let { f ->
         NameDialog(title = "Save recording", initial = "Recording ${act.store.sounds.size + 1}",
@@ -320,9 +327,9 @@ fun BottomControls(act: MainActivity) {
     val (hasMic, askMic) = rememberMic()
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
-            // Keep access to the file after the app restarts.
-            runCatching { ctx.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
-            act.pendingUri = uri
+            if (act.store.isPlayableAudio(uri)) act.pendingUri = uri
+            else Toast.makeText(ctx, "That isn't a sound file Android can play. MP3, WAV, M4A, OGG and FLAC all work.",
+                Toast.LENGTH_LONG).show()
         }
     }
     SideEffect { act.picker = picker }

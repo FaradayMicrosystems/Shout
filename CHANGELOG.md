@@ -5,6 +5,14 @@ fixes and looks (colours, design, logo). Experimental builds carry the letter e 
 stable releases carry none. Stable releases come from `main`. Work in progress lands on `experimental`
 first as `vX.Y.Ze+<build>` until Aurora calls a full release.
 
+## v0.1.1 — 2026-11-18
+
+- **MP3 and WAV files can be added.** The file picker no longer hides files: many phones label
+  downloaded MP3/WAV files as generic data, which the old "audio only" filter greyed out. Shout now
+  checks the file itself after you pick it and tells you if it can't play it.
+- Added sounds are copied into Shout, so they keep working if the original is moved or deleted,
+  and files from Google Drive or other apps work too.
+
 ## v0.1.0 — 2026-11-18
 
 First version.

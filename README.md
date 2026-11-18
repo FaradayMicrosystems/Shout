@@ -4,7 +4,7 @@ Android soundboard and megaphone for a Bluetooth speaker. Put the speaker outsid
 under it), sit in the cab with your phone or tablet, and fire off sound effects or talk through
 the speaker. Built for festival nonsense.
 
-## What it does (v0.1.0)
+## What it does (v0.1.1)
 
 **Soundboard.** The main screen is a grid of your sounds, each one a big button with the name you
 gave it. Tap a button to play it through the speaker; tap it again to stop it. Sounds can overlap.
@@ -20,9 +20,10 @@ A **Stop all** button shows up while anything is playing.
 
 **Edit mode** (tap **Edit sounds**):
 
-- **Add from files**: pick any audio file on the device (mp3, wav, m4a, ogg...), give it a name.
-  Shout plays it straight from where it is; nothing is copied. If you delete or move the original
-  file, that button stops working.
+- **Add from files**: pick any sound file on the device (MP3, WAV, M4A, AAC, OGG, FLAC, OPUS...)
+  and give it a name. Every file is shown in the picker; if you pick something that isn't a sound,
+  Shout says so. Shout keeps its own copy, so the button still works if you move or delete the
+  original, and files from Downloads, Google Drive or a Files app all work.
 - **Record new**: tap to record from the mic, tap again to stop, name it. It's saved inside the app.
 - **Rename**: tap a sound. **Remove**: tap its red X.
 - **Size slider** (zoom icons at the top): smaller buttons fit more on screen. The board scrolls
