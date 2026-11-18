@@ -5,6 +5,12 @@ fixes and looks (colours, design, logo). Experimental builds carry the letter e 
 stable releases carry none. Stable releases come from `main`. Work in progress lands on `experimental`
 first as `vX.Y.Ze+<build>` until Aurora calls a full release.
 
+## v0.3.0 — 2026-11-18
+
+- **Press and hold a sound to loop it.** It turns teal with a repeat icon and plays on repeat until
+  you tap it (or Stop all). Holding a sound that's already playing switches it to looping.
+- Holding a sound no longer opens the edit menu; editing lives only in **Edit sounds**.
+
 ## v0.2.0 — 2026-11-18
 
 - **Add many sounds at once.** In Edit sounds > Add from files, long-press a file, tap the rest,

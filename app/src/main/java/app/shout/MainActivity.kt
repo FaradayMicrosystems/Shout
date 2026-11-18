@@ -51,6 +51,7 @@ private val Pink = Color(0xFFFF4D8D)
 private val Bg = Color(0xFF121218)
 private val Tile = Color(0xFF23232E)
 private val TileOn = Color(0xFF6A2BFF)
+private val LoopOn = Color(0xFF00897B) // teal = looping
 
 class MainActivity : ComponentActivity() {
     lateinit var store: SoundStore
@@ -185,22 +186,31 @@ fun SoundboardGrid(act: MainActivity) {
                 }
                 items(act.store.sounds, key = { it.id }) { s ->
                     val on = act.player.playing[s.id] == true
+                    val looped = act.player.looping[s.id] == true
                     Box {
                         Surface(
                             shape = RoundedCornerShape(16.dp),
-                            color = if (on) TileOn else Tile,
+                            color = if (looped) LoopOn else if (on) TileOn else Tile,
                             modifier = Modifier.fillMaxWidth().height(tileH).combinedClickable(
                                 onClick = {
                                     if (act.editMode) editing = s
                                     else act.player.toggle(s) { Toast.makeText(ctx, it, Toast.LENGTH_LONG).show() }
                                 },
-                                onLongClick = { editing = s }
+                                // Long-press: loop it until tapped. (Editing only happens in Edit sounds.)
+                                onLongClick = {
+                                    if (act.editMode) editing = s
+                                    else act.player.loop(s) { Toast.makeText(ctx, it, Toast.LENGTH_LONG).show() }
+                                }
                             )
                         ) {
                             Box(Modifier.padding(10.dp), contentAlignment = Alignment.Center) {
                                 Text(s.name, fontSize = fontSize, fontWeight = FontWeight.Bold, color = Color.White,
                                     textAlign = TextAlign.Center, maxLines = 3, overflow = TextOverflow.Ellipsis)
                             }
+                        }
+                        if (looped) {
+                            Icon(Icons.Default.Repeat, "Looping", tint = Color.White,
+                                modifier = Modifier.align(Alignment.TopStart).padding(8.dp).size(20.dp))
                         }
                         if (act.editMode) {
                             SmallFloatingActionButton(onClick = { act.player.stop(s.id); act.store.delete(s) },
