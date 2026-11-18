@@ -8,7 +8,8 @@ import org.json.JSONObject
 import java.io.File
 import java.util.UUID
 
-data class Sound(val id: String, val name: String, val uri: String)
+/** loop = keep repeating when tapped, until tapped again (set in Edit sounds). */
+data class Sound(val id: String, val name: String, val uri: String, val loop: Boolean = false)
 
 /** Saves the soundboard list (name + file location) in app preferences. */
 class SoundStore(private val context: Context) {
@@ -19,13 +20,13 @@ class SoundStore(private val context: Context) {
         val arr = JSONArray(prefs.getString("list", "[]"))
         return (0 until arr.length()).map {
             val o = arr.getJSONObject(it)
-            Sound(o.getString("id"), o.getString("name"), o.getString("uri"))
+            Sound(o.getString("id"), o.getString("name"), o.getString("uri"), o.optBoolean("loop", false))
         }
     }
 
     private fun save() {
         val arr = JSONArray()
-        sounds.forEach { arr.put(JSONObject().put("id", it.id).put("name", it.name).put("uri", it.uri)) }
+        sounds.forEach { arr.put(JSONObject().put("id", it.id).put("name", it.name).put("uri", it.uri).put("loop", it.loop)) }
         prefs.edit().putString("list", arr.toString()).apply()
     }
 
@@ -98,9 +99,9 @@ class SoundStore(private val context: Context) {
         }.getOrDefault(false)
     }
 
-    fun rename(sound: Sound, name: String) {
+    fun update(sound: Sound, name: String, loop: Boolean) {
         val i = sounds.indexOfFirst { it.id == sound.id }
-        if (i >= 0) { sounds[i] = sound.copy(name = name); save() }
+        if (i >= 0) { sounds[i] = sound.copy(name = name, loop = loop); save() }
     }
 
     fun delete(sound: Sound) {

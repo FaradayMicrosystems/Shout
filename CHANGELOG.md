@@ -7,9 +7,11 @@ first as `vX.Y.Ze+<build>` until Aurora calls a full release.
 
 ## v0.3.0 — 2026-11-18
 
-- **Press and hold a sound to loop it.** It turns teal with a repeat icon and plays on repeat until
-  you tap it (or Stop all). Holding a sound that's already playing switches it to looping.
-- Holding a sound no longer opens the edit menu; editing lives only in **Edit sounds**.
+- **Loop switch for each sound.** In Edit sounds, tap a sound and turn on **Loop**. Tapping it on
+  the board then plays it on repeat (button turns teal) until you tap it again or hit Stop all.
+  Sounds with Loop on show a repeat icon.
+- Holding a sound no longer does anything (no menu, no accidental triggers). Editing lives only in
+  **Edit sounds**.
 
 ## v0.2.0 — 2026-11-18
 

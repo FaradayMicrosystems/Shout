@@ -18,7 +18,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -155,7 +155,7 @@ fun SoundboardGrid(act: MainActivity) {
                     valueRange = 90f..260f, modifier = Modifier.weight(1f).padding(horizontal = 8.dp))
                 Icon(Icons.Default.ZoomIn, null, tint = Color.Gray)
             }
-            Text("Tap a sound to rename it. Tap the red X to remove it.", color = Color.Gray, fontSize = 13.sp,
+            Text("Tap a sound to rename it or turn Loop on. Tap the red X to remove it.", color = Color.Gray, fontSize = 13.sp,
                 modifier = Modifier.padding(horizontal = 16.dp))
         }
         val tileH = (act.tileSize * 0.7f).dp
@@ -191,16 +191,12 @@ fun SoundboardGrid(act: MainActivity) {
                         Surface(
                             shape = RoundedCornerShape(16.dp),
                             color = if (looped) LoopOn else if (on) TileOn else Tile,
-                            modifier = Modifier.fillMaxWidth().height(tileH).combinedClickable(
+                            modifier = Modifier.fillMaxWidth().height(tileH).clickable(
+                                // Tap only. Long-press does nothing, so a slip can't trigger anything.
                                 onClick = {
                                     if (act.editMode) editing = s
                                     else act.player.toggle(s) { Toast.makeText(ctx, it, Toast.LENGTH_LONG).show() }
                                 },
-                                // Long-press: loop it until tapped. (Editing only happens in Edit sounds.)
-                                onLongClick = {
-                                    if (act.editMode) editing = s
-                                    else act.player.loop(s) { Toast.makeText(ctx, it, Toast.LENGTH_LONG).show() }
-                                }
                             )
                         ) {
                             Box(Modifier.padding(10.dp), contentAlignment = Alignment.Center) {
@@ -208,8 +204,8 @@ fun SoundboardGrid(act: MainActivity) {
                                     textAlign = TextAlign.Center, maxLines = 3, overflow = TextOverflow.Ellipsis)
                             }
                         }
-                        if (looped) {
-                            Icon(Icons.Default.Repeat, "Looping", tint = Color.White,
+                        if (s.loop) { // repeat icon = this sound loops when tapped
+                            Icon(Icons.Default.Repeat, "Loops", tint = Color.White,
                                 modifier = Modifier.align(Alignment.TopStart).padding(8.dp).size(20.dp))
                         }
                         if (act.editMode) {
@@ -246,20 +242,38 @@ fun SoundboardGrid(act: MainActivity) {
             onConfirm = { act.store.add(it, Uri.fromFile(f)); act.finishedRec = null })
     }
     editing?.let { s ->
+        var loop by remember(s.id) { mutableStateOf(s.loop) }
         NameDialog(title = "Edit sound", initial = s.name,
             onDismiss = { editing = null },
-            onConfirm = { act.store.rename(s, it); editing = null },
+            onConfirm = { act.store.update(s, it, loop); editing = null },
+            extra = {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 12.dp)) {
+                    Icon(Icons.Default.Repeat, null)
+                    Spacer(Modifier.width(8.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("Loop")
+                        Text("Repeats until you tap it again", fontSize = 12.sp, color = Color.Gray)
+                    }
+                    Switch(checked = loop, onCheckedChange = { loop = it })
+                }
+            },
             onDelete = { act.player.stop(s.id); act.store.delete(s); editing = null })
     }
 }
 
 @Composable
-fun NameDialog(title: String, initial: String, onDismiss: () -> Unit, onConfirm: (String) -> Unit, onDelete: (() -> Unit)? = null) {
+fun NameDialog(title: String, initial: String, onDismiss: () -> Unit, onConfirm: (String) -> Unit,
+               onDelete: (() -> Unit)? = null, extra: (@Composable () -> Unit)? = null) {
     var text by remember { mutableStateOf(initial) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
-        text = { OutlinedTextField(text, { text = it }, singleLine = true, label = { Text("Name") }) },
+        text = {
+            Column {
+                OutlinedTextField(text, { text = it }, singleLine = true, label = { Text("Name") })
+                extra?.invoke()
+            }
+        },
         confirmButton = { TextButton(onClick = { onConfirm(text.trim().ifEmpty { "Sound" }) }) { Text("Save") } },
         dismissButton = {
             Row {

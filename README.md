@@ -7,9 +7,9 @@ the speaker. Built for festival nonsense.
 ## What it does (v0.3.0)
 
 **Soundboard.** The main screen is a grid of your sounds, each one a big button with the name you
-gave it. Tap a button to play it through the speaker; tap it again to stop it. **Press and hold**
-a button to loop it: it turns teal with a repeat icon and keeps playing until you tap it. Sounds
-can overlap.
+gave it. Tap a button to play it through the speaker; tap it again to stop it. Sounds with
+**Loop** turned on (repeat icon on the button) keep repeating, in teal, until you tap them again.
+Holding a button does nothing, so a slip of the finger can't set anything off. Sounds can overlap.
 A **Stop all** button shows up while anything is playing.
 
 **The bottom bar** is always on screen and has three buttons:
@@ -29,7 +29,8 @@ A **Stop all** button shows up while anything is playing.
   Shout says so. Shout keeps its own copy, so the button still works if you move or delete the
   original, and files from Downloads, Google Drive or a Files app all work.
 - **Record new**: tap to record from the mic, tap again to stop, name it. It's saved inside the app.
-- **Rename**: tap a sound. **Remove**: tap its red X.
+- **Rename or set Loop**: tap a sound. The **Loop** switch makes it repeat until tapped again.
+- **Remove**: tap its red X.
 - **Size slider** (zoom icons at the top): smaller buttons fit more on screen. The board scrolls
   like an app drawer once there are more sounds than fit.
 - Tap **Done** to go back to playing.

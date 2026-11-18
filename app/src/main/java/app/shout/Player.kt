@@ -13,20 +13,13 @@ import androidx.compose.runtime.mutableStateMapOf
 class Player(private val context: Context) {
     private val players = mutableMapOf<String, MediaPlayer>()
     val playing = mutableStateMapOf<String, Boolean>()
-    /** Sounds currently set to repeat forever (started with a long-press). */
+    /** Sounds currently playing on repeat (their Loop switch is on). */
     val looping = mutableStateMapOf<String, Boolean>()
 
     /** Tap = play from the start. Tap again while playing (or looping) = stop. */
     fun toggle(sound: Sound, onError: (String) -> Unit) {
         if (players.containsKey(sound.id)) { stop(sound.id); return }
-        start(sound, loop = false, onError)
-    }
-
-    /** Long-press = loop until tapped. If the sound is already playing, it just keeps going on repeat. */
-    fun loop(sound: Sound, onError: (String) -> Unit) {
-        val mp = players[sound.id]
-        if (mp != null) { mp.isLooping = true; looping[sound.id] = true; return }
-        start(sound, loop = true, onError)
+        start(sound, loop = sound.loop, onError)
     }
 
     private fun start(sound: Sound, loop: Boolean, onError: (String) -> Unit) {
